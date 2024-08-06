@@ -1,0 +1,22 @@
+package main
+
+import (
+	"log"
+	"net/http"
+
+	"github.com/jakobsym/BudgetFi/api/internal/controller/budgetfi"
+	httphandler "github.com/jakobsym/BudgetFi/api/internal/handler/http"
+	"github.com/jakobsym/BudgetFi/api/internal/repository/mysql"
+)
+
+func main() {
+	log.Println("starting backend service")
+	repo := mysql.New()
+	ctrl := budgetfi.New(repo)
+	h := httphandler.New(ctrl)
+
+	http.HandleFunc("/register", h.CreateUser)
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		panic(err)
+	}
+}
