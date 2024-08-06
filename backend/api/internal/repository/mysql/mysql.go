@@ -69,7 +69,7 @@ func MySqlConnection() (*sql.DB, error) {
 
 // Util
 func loadDbEnv() string {
-	err := godotenv.Load()
+	err := godotenv.Load("backend.env")
 	if err != nil {
 		log.Fatal("error loading .env file")
 	}
