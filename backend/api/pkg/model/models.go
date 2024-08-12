@@ -5,7 +5,7 @@ import "time"
 type User struct {
 	Name      string
 	Email     string
-	UUID      string
+	UUID      [16]byte
 	Google_Id string
 	Expense   []Expense
 	Budget    []Budget

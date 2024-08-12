@@ -10,7 +10,8 @@ import (
 var ErrNotFound = errors.New("not found")
 
 type budgetfiRepo interface {
-	Post(ctx context.Context, user *model.User) error
+	//Post(ctx context.Context, user *model.User) error
+	CreateUser(ctx context.Context, user *model.User) error
 	//TODO: Get
 	//TODO: Put
 	//TODO: Delete
@@ -24,8 +25,15 @@ func New(repo budgetfiRepo) *Controller {
 	return &Controller{repo: repo}
 }
 
-func (c *Controller) Post(ctx context.Context, user *model.User) error {
-	return c.repo.Post(ctx, user)
+/*
+// Deprecated
+
+	func (c *Controller) Post(ctx context.Context, user *model.User) error {
+		return c.repo.Post(ctx, user)
+	}
+*/
+func (c *Controller) CreateUser(ctx context.Context, user *model.User) error {
+	return c.repo.CreateUser(ctx, user)
 }
 
 //TODO: Get

@@ -1,0 +1,101 @@
+package msmysql
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"sync"
+
+	"github.com/jakobsym/BudgetFi/api/pkg/model"
+	"github.com/joho/godotenv"
+)
+
+type Repository struct {
+	sync.RWMutex
+}
+
+func New() *Repository {
+	return &Repository{}
+}
+
+// TODO: Return the UUID that is generated for that user
+func (r *Repository) CreateUser(_ context.Context, user *model.User) error {
+	r.Lock()
+	var err error
+	defer r.Unlock()
+	db, err := MsSqlConnection()
+	if err != nil {
+		return fmt.Errorf("error establishing DB connection: %v", err)
+	}
+
+	if db == nil {
+		err = errors.New("CreateUser: db is null")
+		return err
+	}
+
+	return nil
+}
+
+func MsSqlConnection() (*sql.DB, error) {
+	var err error
+	var port int
+	var db *sql.DB
+
+	env := loadDbEnv()
+	port, err = strconv.Atoi(env["DB_PORT"])
+	if err != nil {
+		return nil, fmt.Errorf("error converting string to int: %v", err)
+	}
+	// connection string
+	cString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s;",
+		env["DB_SERVER"], env["DB_USER"], env["DB_PW"], port, env["DB"])
+
+	db, err = sql.Open("sqlserver", cString)
+	if err != nil {
+		return nil, fmt.Errorf("error creating connection pool: %v", err)
+	}
+
+	ctx := context.Background()
+	err = db.PingContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to ping db: %v", err)
+	}
+	fmt.Printf("Connected to ms-sqlDB")
+	return db, nil
+}
+
+// Util
+func loadDbEnv() map[string]string {
+	err := godotenv.Load("backend.env")
+	if err != nil {
+		log.Fatal("error loading .env")
+	}
+
+	envMap := map[string]string{
+		"DB_SERVER": os.Getenv("DB_SERVER"),
+		"DB_PORT":   os.Getenv("DB_PORT"),
+		"DB_USER":   os.Getenv("DB_USER"),
+		"DB_PW":     os.Getenv("DB_PW"),
+		"DB":        os.Getenv("DB"),
+	}
+
+	return envMap
+}
+
+/*
+// Deprecated
+func (r *Repository) Post(_ context.Context, user *model.User) error {
+	r.Lock()
+	defer r.Unlock()
+	db, err := MsSqlConnection()
+	defer db.Close()
+	if err != nil {
+		return fmt.Errorf("error establishing DB connection: %v", err)
+	}
+	return nil
+}
+*/

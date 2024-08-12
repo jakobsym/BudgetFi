@@ -6,16 +6,17 @@ import (
 
 	"github.com/jakobsym/BudgetFi/api/internal/controller/budgetfi"
 	httphandler "github.com/jakobsym/BudgetFi/api/internal/handler/http"
-	"github.com/jakobsym/BudgetFi/api/internal/repository/mysql"
+	"github.com/jakobsym/BudgetFi/api/internal/repository/msmysql"
 )
 
 func main() {
 	log.Println("starting backend service")
-	repo := mysql.New()
+	//repo := mysql.New()
+	repo := msmysql.New()
 	ctrl := budgetfi.New(repo)
 	h := httphandler.New(ctrl)
 
-	http.HandleFunc("/register", h.CreateUser)
+	http.HandleFunc("/register", h.InitUser)
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		panic(err)
 	}
