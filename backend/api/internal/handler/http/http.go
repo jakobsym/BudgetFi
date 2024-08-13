@@ -18,7 +18,7 @@ func New(ctrl *budgetfi.Controller) *Handler {
 	return &Handler{ctrl: ctrl}
 }
 
-func (h *Handler) InitUser(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var usr model.User
 	defer r.Body.Close()
 	var err error

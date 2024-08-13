@@ -3,12 +3,12 @@ package model
 import "time"
 
 type User struct {
-	Name      string
-	Email     string
-	UUID      [16]byte
-	Google_Id string
-	Expense   []Expense
-	Budget    []Budget
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	UUID      [16]byte  `json:"uuid"`
+	Google_Id string    `json:"google_id"`
+	Expense   []Expense `json:"expense"`
+	Budget    []Budget  `json:"budget"`
 	// transactions
 }
 

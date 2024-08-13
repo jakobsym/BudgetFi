@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"sync"
 
+	_ "github.com/denisenkom/go-mssqldb"
 	"github.com/jakobsym/BudgetFi/api/pkg/model"
 	"github.com/joho/godotenv"
 )
@@ -23,10 +24,10 @@ func New() *Repository {
 }
 
 // TODO: Return the UUID that is generated for that user
-func (r *Repository) CreateUser(_ context.Context, user *model.User) error {
-	r.Lock()
+func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
+	//r.Lock()
+	//defer r.Unlock()
 	var err error
-	defer r.Unlock()
 	db, err := MsSqlConnection()
 	if err != nil {
 		return fmt.Errorf("error establishing DB connection: %v", err)
@@ -36,10 +37,26 @@ func (r *Repository) CreateUser(_ context.Context, user *model.User) error {
 		err = errors.New("CreateUser: db is null")
 		return err
 	}
+	tsql := `INSERT INTO [dbo].[Users] (name, email, id, google_id) VALUES (@Name,@Email,@Id,@Google_ID);`
+	stmt, err := db.PrepareContext(ctx, tsql)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	uuid := user.UUID[:] // convert to []byte instead of [16]byte
+	_, err = stmt.ExecContext(ctx,
+		sql.Named("name", user.Name),
+		sql.Named("email", user.Email),
+		sql.Named("id", uuid),
+		sql.Named("google_id", user.Google_Id))
 
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
+// Util
 func MsSqlConnection() (*sql.DB, error) {
 	var err error
 	var port int
