@@ -41,7 +41,6 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		log.Printf("User creation server error: %v\n", err)
 		return
 	}
-
 }
 
 // Util

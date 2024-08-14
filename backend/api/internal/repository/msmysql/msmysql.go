@@ -56,6 +56,27 @@ func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
 	return nil
 }
 
+func (r *Repository) CreateCategory(ctx context.Context, category *model.Catergory) error {
+	return nil
+}
+
+func (r *Repository) DeleteCategory(ctx context.Context, category *model.Catergory) error {
+	return nil
+}
+
+func (r *Repository) UpdateCategory(ctx context.Context, category *model.Catergory) error {
+	return nil
+}
+
+// TODO:
+// Add Budget to a User will need to pass a category
+// Update Budget
+// Delete Budget
+
+// Add Expense to User will need to pass a category
+// Update Expense
+// Delete Expense
+
 // Util
 func MsSqlConnection() (*sql.DB, error) {
 	var err error
