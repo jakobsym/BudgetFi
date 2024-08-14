@@ -8,5 +8,5 @@ Frontend:
 Example cURL request:
     curl --header "Content-Type: application/json" \
   --request POST \
-  --data '{"username":"xyz","password":"xyz"}' \
+  --data '{"name":"test user","email":"testuser@email.com", "google_id": "123456789"}' \
   http://localhost:8080/register
