@@ -17,6 +17,7 @@ func main() {
 	h := httphandler.New(ctrl)
 
 	http.HandleFunc("/register", h.CreateUser)
+	http.HandleFunc("/login", h.Login)
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		panic(err)
 	}

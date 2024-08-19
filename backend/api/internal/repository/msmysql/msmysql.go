@@ -23,7 +23,38 @@ func New() *Repository {
 	return &Repository{}
 }
 
-// TODO: Return the UUID that is generated for that user
+// Checks DB via `google_id` to determine if a new user or not
+// returns users 'uuid' as a string if they are
+// otherwise returns an empty string indicating a new user
+func (r *Repository) PrevUserCheck(ctx context.Context, user *model.User) (string, error) {
+	var err error
+	db, err := MsSqlConnection()
+	if err != nil {
+		return "", fmt.Errorf("error establishing DB connection: %v", err)
+	}
+	if db == nil {
+		err = errors.New("login: db is null")
+		return "", err
+	}
+	tsql := `SELECT id FROM [dbo].[Users] where google_id = (@Google_ID)`
+	stmt, err := db.PrepareContext(ctx, tsql)
+	if err != nil {
+		return "", err
+	}
+	defer stmt.Close()
+	var userUUID string
+	err = stmt.QueryRowContext(ctx, sql.Named("google_id", user.Google_Id)).Scan(&userUUID)
+
+	// TOOD: iffy on conditional logic here
+	if err == sql.ErrNoRows {
+		return "", err
+	} else if err != nil {
+		return "", err
+	}
+
+	return userUUID, nil
+}
+
 func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
 	//r.Lock()
 	//defer r.Unlock()

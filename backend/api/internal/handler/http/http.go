@@ -43,6 +43,43 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// when a user presses sign-in a POST request is sent with all of their OAuth credentials
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	var usr model.User
+	//var err error
+
+	//TODO: OAuth Login to obtain user information such as name, email, google_id
+
+	// check if user is in DB via google_id
+	usrUUID, err := h.ctrl.PrevUserCheck(r.Context(), &usr)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("Error fetching from DB: %v\n", err)
+		return
+	}
+	// New user -> Create new one
+	if usrUUID == "" {
+		defer r.Body.Close()
+		usr.UUID, err = GenerateUUID()
+		if err != nil {
+			http.Error(w, "unable to gen UUID"+err.Error(), http.StatusInternalServerError)
+			//log.Fatal("error generating uuid")
+		}
+		if err := json.NewDecoder(r.Body).Decode(&usr); err != nil {
+			http.Error(w, "Invalid user data: "+err.Error(), http.StatusBadRequest) // 400 status code if error in request
+			return
+		}
+		err := h.ctrl.CreateUser(r.Context(), &usr)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			log.Printf("User creation server error: %v\n", err)
+			return
+		}
+	}
+
+	//TODO: Create a Session
+}
+
 // Util
 // generates [16]byte uuid
 func GenerateUUID() (uuid.UUID, error) {
