@@ -3,6 +3,7 @@ module github.com/jakobsym/BudgetFi
 go 1.22.0
 
 require (
+	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/denisenkom/go-mssqldb v0.12.3 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
@@ -11,4 +12,5 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
+	golang.org/x/oauth2 v0.22.0 // indirect
 )

@@ -16,8 +16,10 @@ func main() {
 	ctrl := budgetfi.New(repo)
 	h := httphandler.New(ctrl)
 
-	http.HandleFunc("/register", h.CreateUser)
+	//http.HandleFunc("/register", h.CreateUser)
 	http.HandleFunc("/login", h.Login)
+	http.HandleFunc("login/auth", h.OauthCallback) // server side processing route
+	http.HandleFunc("/dashboard", h.Login)         // TODO: implement
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		panic(err)
 	}

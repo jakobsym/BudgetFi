@@ -1,6 +1,8 @@
 package httphandler
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -8,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jakobsym/BudgetFi/api/internal/controller/budgetfi"
 	"github.com/jakobsym/BudgetFi/api/pkg/model"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
 type Handler struct {
@@ -43,8 +47,23 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// when a user presses sign-in a POST request is sent with all of their OAuth credentials
+// Google OAuth2 config
+var OauthConfig = &oauth2.Config{
+	RedirectURL:  "http://localhost:8080/login/auth",
+	ClientID:     "YOUR_GOOGLE_CLIENT_ID",
+	ClientSecret: "YOUR_GOOGLE_CLIENT_SECRET",
+	Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"},
+	Endpoint:     google.Endpoint,
+}
+
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	oauthStateString := genStateOauthCookie()
+	url := OauthConfig.AuthCodeURL(oauthStateString, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+}
+
+// when a user presses sign-in a POST request is sent with all of their OAuth credentials
+func (h *Handler) OauthCallback(w http.ResponseWriter, r *http.Request) {
 	var usr model.User
 	//var err error
 
@@ -84,4 +103,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // generates [16]byte uuid
 func GenerateUUID() (uuid.UUID, error) {
 	return uuid.Must(uuid.NewRandom()), nil
+}
+
+// Util
+// generates oauth state cookie
+func genStateOauthCookie() string {
+	b := make([]byte, 16)
+	rand.Read(b)
+	state := base64.URLEncoding.EncodeToString(b)
+	return state
 }
