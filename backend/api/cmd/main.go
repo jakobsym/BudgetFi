@@ -18,8 +18,8 @@ func main() {
 
 	//http.HandleFunc("/register", h.CreateUser)
 	http.HandleFunc("/login", h.Login)
-	http.HandleFunc("login/auth", h.OauthCallback) // server side processing route
-	http.HandleFunc("/dashboard", h.Login)         // TODO: implement
+	http.HandleFunc("login/auth", h.OauthCallback) // server side processing route, user never sees this
+	http.HandleFunc("/dashboard", h.Login)         // TODO: Create this (after sever side processing user is redirected here)
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		panic(err)
 	}
