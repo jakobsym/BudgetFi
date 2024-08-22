@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/google/uuid"
+	"github.com/gorilla/sessions"
 	"github.com/jakobsym/BudgetFi/api/internal/controller/budgetfi"
 	"github.com/jakobsym/BudgetFi/api/pkg/model"
 	"github.com/joho/godotenv"
@@ -26,6 +27,7 @@ func New(ctrl *budgetfi.Controller) *Handler {
 }
 
 var env = loadOauthEnv()
+var store = sessions.NewCookieStore([]byte(env["SESSIONS_SECRET"]))
 
 // Google OAuth2 config
 var OauthConfig = &oauth2.Config{
@@ -94,9 +96,23 @@ func (h *Handler) OauthCallback(w http.ResponseWriter, r *http.Request) {
 			log.Printf("User creation server error: %v\n", err)
 			return
 		}
+		usrUUID = string(usr.UUID[:])
 	}
 
-	//TODO: Create a Session
+	// create a session
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, "unable to get session"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	session.Values["user_id"] = usrUUID
+	err = session.Save(r, w)
+	if err != nil {
+		http.Error(w, "unable to save session"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("User logged-in"))
 }
 
 // Util
@@ -114,14 +130,16 @@ func genStateOauthCookie() string {
 	return state
 }
 
+// Util
 func loadOauthEnv() map[string]string {
 	err := godotenv.Load("backend.env")
 	if err != nil {
 		log.Printf("unable to load oauth .env values: %v\n", err)
 	}
 	envMap := map[string]string{
-		"CLIENT_ID":     os.Getenv("CLIENT_ID"),
-		"CLIENT_SECRET": os.Getenv("CLIENT_SECRET"),
+		"CLIENT_ID":      os.Getenv("CLIENT_ID"),
+		"CLIENT_SECRET":  os.Getenv("CLIENT_SECRET"),
+		"SESSION_SECRET": os.Getenv("SESSION_SECRET"),
 	}
 	return envMap
 }
@@ -142,7 +160,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Validate the user information
+	// Validate the user information
 	// https://dev.to/wati_fe/how-i-validate-user-input-in-golang-c5f
 	err = h.ctrl.CreateUser(r.Context(), &usr)
 	//err = h.ctrl.Post(r.Context(), usr)
