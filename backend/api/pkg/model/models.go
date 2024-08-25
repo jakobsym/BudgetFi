@@ -31,3 +31,13 @@ type Catergory struct {
 	Id   int
 	Name string
 }
+
+type QuizResults struct {
+	// based on questions categories are created
+	// which should be stored here
+	// maybe??
+	Categories     []Catergory
+	Expenses       []Expense
+	ExpenseResults map[string]bool // map["CC"]true (iterate over the results, as there are preset expense categories?)
+
+}

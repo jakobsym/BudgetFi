@@ -17,6 +17,7 @@ func main() {
 	h := httphandler.New(ctrl)
 
 	//http.HandleFunc("/register", h.CreateUser)
+	http.HandleFunc("/logout", h.Logout)
 	http.HandleFunc("/login", h.Login)
 	http.HandleFunc("login/auth", h.OauthCallback) // server side processing route, user never sees this
 	http.HandleFunc("/dashboard", h.Login)         // TODO: Create this (after sever side processing user is redirected here)

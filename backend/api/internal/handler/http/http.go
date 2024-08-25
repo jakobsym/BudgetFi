@@ -45,6 +45,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 // when a user presses sign-in a POST request is sent with all of their OAuth credentials
+// TODO: Condense code after testing
 func (h *Handler) OauthCallback(w http.ResponseWriter, r *http.Request) {
 	var usr model.User
 
@@ -101,6 +102,10 @@ func (h *Handler) OauthCallback(w http.ResponseWriter, r *http.Request) {
 
 	// create a session
 	session, err := store.Get(r, "session-name")
+	session.Options.MaxAge = 86400 * 7
+	session.Options.HttpOnly = true
+
+	log.Println(session)
 	if err != nil {
 		http.Error(w, "unable to get session"+err.Error(), http.StatusInternalServerError)
 		return
@@ -114,6 +119,25 @@ func (h *Handler) OauthCallback(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("User logged-in"))
 }
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	// fetch session id
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, "unable to get session"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	session.Values = make(map[interface{}]interface{})
+	session.Options.MaxAge = -1
+	err = session.Save(r, w)
+	if err != nil {
+		http.Error(w, "unable to delete session"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("User session deleted."))
+}
+
+// TODO: make session creation a function?
 
 // Util
 // generates [16]byte uuid
