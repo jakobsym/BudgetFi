@@ -15,7 +15,6 @@ import (
 	"github.com/jakobsym/BudgetFi/api/pkg/model"
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
 
 type Handler struct {
@@ -34,17 +33,21 @@ var OauthConfig = &oauth2.Config{
 	RedirectURL:  "http://localhost:8080/login/auth",
 	ClientID:     env["CLIENT_ID"],
 	ClientSecret: env["CLIENT_SECRET"],
-	Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"},
-	Endpoint:     google.Endpoint,
+	Scopes:       []string{"openid", "profile", "email"},
+	//Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"},
+	Endpoint: oauth2.Endpoint{
+		AuthURL:  "https://accounts.google.com/o/oauth2/auth",
+		TokenURL: "https://oauth2.googleapis.com/token",
+	},
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	oauthStateString := genStateOauthCookie()
-	url := OauthConfig.AuthCodeURL(oauthStateString, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
+	//url := OauthConfig.AuthCodeURL(oauthStateString, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
+	url := OauthConfig.AuthCodeURL(oauthStateString)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-// when a user presses sign-in a POST request is sent with all of their OAuth credentials
 // TODO: Condense code after testing
 func (h *Handler) OauthCallback(w http.ResponseWriter, r *http.Request) {
 	var usr model.User
