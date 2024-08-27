@@ -30,11 +30,11 @@ var store = sessions.NewCookieStore([]byte(env["SESSIONS_SECRET"]))
 
 // Google OAuth2 config
 var OauthConfig = &oauth2.Config{
-	RedirectURL:  "http://localhost:8080/login/auth",
+	RedirectURL:  "http://localhost:8080/auth",
 	ClientID:     env["CLIENT_ID"],
 	ClientSecret: env["CLIENT_SECRET"],
-	Scopes:       []string{"openid", "profile", "email"},
-	//Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"},
+	//Scopes:       []string{"openid", "profile", "email"},
+	Scopes: []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"},
 	Endpoint: oauth2.Endpoint{
 		AuthURL:  "https://accounts.google.com/o/oauth2/auth",
 		TokenURL: "https://oauth2.googleapis.com/token",
@@ -43,8 +43,8 @@ var OauthConfig = &oauth2.Config{
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	oauthStateString := genStateOauthCookie()
-	//url := OauthConfig.AuthCodeURL(oauthStateString, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
-	url := OauthConfig.AuthCodeURL(oauthStateString)
+	url := OauthConfig.AuthCodeURL(oauthStateString, oauth2.AccessTypeOffline, oauth2.ApprovalForce)
+	//url := OauthConfig.AuthCodeURL(oauthStateString)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
