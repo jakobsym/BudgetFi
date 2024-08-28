@@ -122,6 +122,7 @@ func (h *Handler) OauthCallback(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("User logged-in"))
 }
+
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	// fetch session id
 	session, err := store.Get(r, "session-name")
