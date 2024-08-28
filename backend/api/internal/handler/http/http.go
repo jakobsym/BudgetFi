@@ -26,15 +26,14 @@ func New(ctrl *budgetfi.Controller) *Handler {
 }
 
 var env = loadOauthEnv()
-var store = sessions.NewCookieStore([]byte(env["SESSIONS_SECRET"]))
+var store = sessions.NewCookieStore([]byte(env["SESSION_SECRET"]))
 
 // Google OAuth2 config
 var OauthConfig = &oauth2.Config{
 	RedirectURL:  "http://localhost:8080/auth",
 	ClientID:     env["CLIENT_ID"],
 	ClientSecret: env["CLIENT_SECRET"],
-	//Scopes:       []string{"openid", "profile", "email"},
-	Scopes: []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"},
+	Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"},
 	Endpoint: oauth2.Endpoint{
 		AuthURL:  "https://accounts.google.com/o/oauth2/auth",
 		TokenURL: "https://oauth2.googleapis.com/token",
@@ -52,8 +51,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) OauthCallback(w http.ResponseWriter, r *http.Request) {
 	var usr model.User
 
-	// oauth code to obtain user info
-	token, err := OauthConfig.Exchange(context.Background(), r.FormValue("code"))
+	code := r.FormValue("code")
+	token, err := OauthConfig.Exchange(context.Background(), code)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Printf("error obtaining token via oauth: %v\n", err)
@@ -71,7 +70,6 @@ func (h *Handler) OauthCallback(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(res.Body).Decode(&usr); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Printf("Error reading Oauth JSON body: %v\n", err)
-
 	}
 
 	// check if user is in DB via google_id
@@ -89,10 +87,6 @@ func (h *Handler) OauthCallback(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, "unable to gen UUID"+err.Error(), http.StatusInternalServerError)
 			//log.Fatal("error generating uuid")
-		}
-		if err := json.NewDecoder(r.Body).Decode(&usr); err != nil {
-			http.Error(w, "Invalid user data: "+err.Error(), http.StatusBadRequest) // 400 status code if error in request
-			return
 		}
 		err := h.ctrl.CreateUser(r.Context(), &usr)
 		if err != nil {
@@ -119,6 +113,7 @@ func (h *Handler) OauthCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unable to save session"+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("User logged-in"))
 }

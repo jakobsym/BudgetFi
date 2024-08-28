@@ -47,7 +47,7 @@ func (r *Repository) PrevUserCheck(ctx context.Context, user *model.User) (strin
 
 	// TOOD: iffy on conditional logic here
 	if err == sql.ErrNoRows {
-		return "", err
+		return "", nil
 	} else if err != nil {
 		return "", err
 	}
@@ -133,7 +133,7 @@ func MsSqlConnection() (*sql.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to ping db: %v", err)
 	}
-	fmt.Printf("Connected to ms-sqlDB")
+	//fmt.Printf("Connected to ms-sqlDB")
 	return db, nil
 }
 
