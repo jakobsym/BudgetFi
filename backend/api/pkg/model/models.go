@@ -1,7 +1,5 @@
 package model
 
-import "time"
-
 type User struct {
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
@@ -9,22 +7,29 @@ type User struct {
 	Google_Id string    `json:"id"`
 	Expense   []Expense `json:"expense"`
 	Budget    []Budget  `json:"budget"`
-	// transactions
+	Saving    []Saving  `json:"saving"`
 }
 
 type Expense struct {
-	Id          int
-	Catergory   []Catergory
+	ExpenseId   int
+	CategoryId  int
+	UUID        [16]byte
 	Amount      float64
-	Description string
-	Date        time.Time
+	ExpenseName string
 }
 
 type Budget struct {
-	Id          int
-	Amount      string
-	Description string
-	Catergory   []Catergory
+	BudgetId   int
+	UUID       [16]byte
+	CategoryId int
+	Amount     float64
+}
+
+type Saving struct {
+	SavingId   int
+	UUID       [16]byte
+	CategoryId int
+	Amount     float64
 }
 
 type Catergory struct {
@@ -32,12 +37,8 @@ type Catergory struct {
 	Name string
 }
 
+// Unsure about this
 type QuizResults struct {
-	// based on questions categories are created
-	// which should be stored here
-	// maybe??
-	Categories     []Catergory
-	Expenses       []Expense
-	ExpenseResults map[string]bool // map["CC"]true (iterate over the results, as there are preset expense categories?)
-
+	ExpenseResults map[string][]Expense // ??
+	BudgetResults  map[string][]Budget  //  "question about budget": {1, nil, }
 }
