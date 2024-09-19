@@ -11,9 +11,13 @@ import (
 	"sync"
 
 	_ "github.com/denisenkom/go-mssqldb"
+	"github.com/google/uuid"
 	"github.com/jakobsym/BudgetFi/api/pkg/model"
 	"github.com/joho/godotenv"
 )
+
+// Use ExecContext() for inserts/deletes/updates
+// Use QueryContext() for select statements
 
 type Repository struct {
 	sync.RWMutex
@@ -87,15 +91,110 @@ func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
 	return nil
 }
 
-func (r *Repository) CreateCategory(ctx context.Context, category *model.Catergory) error {
+// TODO: Test me
+// Dont think I need to assing categoryID as that is the PK which should get auto incremented
+func (r *Repository) CreateCategory(ctx context.Context, category *model.Catergory, userID string) error {
+	db, err := MsSqlConnection()
+	if err != nil {
+		return fmt.Errorf("error establishing DB connection: %v", err)
+	}
+	if db == nil {
+		err = errors.New("CreateUser: db is null")
+		return err
+	}
+	tsql := `INSERT INTO [dbo].[Category] (id, name) VALUES (@Id, @Name);`
+	stmt, err := db.PrepareContext(ctx, tsql)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	category.Id = int(uuid.New().ID())
+
+	_, err = stmt.ExecContext(ctx,
+		sql.Named("name", category.Name),
+		sql.Named("id", userID),
+	)
 	return nil
 }
 
-func (r *Repository) DeleteCategory(ctx context.Context, category *model.Catergory) error {
+// TODO: Test me
+func (r *Repository) DeleteCategoryByName(ctx context.Context, categoryName string) error {
+	db, err := MsSqlConnection()
+	if err != nil {
+		return fmt.Errorf("error establishing DB connection: %v", err)
+	}
+	if db == nil {
+		err = errors.New("CreateUser: db is null")
+		return err
+	}
+	tsql := `DELETE FROM [dbo].[Category] WHERE [name] = @Name;`
+	stmt, err := db.PrepareContext(ctx, tsql)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	res, err := stmt.ExecContext(ctx, sql.Named("name", categoryName))
+	if err != nil {
+		return err
+	}
+	row, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	log.Printf("Deleted %d row\n", row)
 	return nil
 }
 
-func (r *Repository) UpdateCategory(ctx context.Context, category *model.Catergory) error {
+func (r *Repository) UpdateCategoryName(ctx context.Context, category *model.Catergory, newCategoryName string) error {
+	return nil
+}
+
+// `Expense` belongs to a category which
+// to create an `Expense` it must belong to some category
+func (r *Repository) CreateExpense(ctx context.Context, expense *model.Expense, categoryName, userId string) error {
+	db, err := MsSqlConnection()
+	if err != nil {
+		return fmt.Errorf("error establishing DB connection: %v", err)
+	}
+	if db == nil {
+		err = errors.New("CreateUser: db is null")
+		return err
+	}
+
+	// using categoryName, and userId query DB for a category with the respective name and userID
+	// searchCategory(categoryName, usrId) model.Category ?
+	// then add the following expense to that category
+
+	//tsql := `INSERT INTO [dbo].[Expense] (id)`
+	return nil
+}
+
+// TODO: Unsure if I need to pass a category?
+// as expenses are within categories
+func (r *Repository) DeleteExpense(ctx context.Context, expenseName string) error {
+	db, err := MsSqlConnection()
+	if err != nil {
+		return fmt.Errorf("error establishing DB connection: %v", err)
+	}
+	if db == nil {
+		err = errors.New("CreateUser: db is null")
+		return err
+	}
+	tsql := `DELETE FROM [dbo].[Expense] WHERE [expense_name] = @expenseName;`
+	stmt, err := db.PrepareContext(ctx, tsql)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	res, err := stmt.ExecContext(ctx, sql.Named("expense_name", expenseName))
+	if err != nil {
+		return err
+	}
+	row, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	log.Printf("Deleted %d row\n", row)
 	return nil
 }
 
