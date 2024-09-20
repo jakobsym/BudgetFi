@@ -33,8 +33,9 @@ type Saving struct {
 }
 
 type Catergory struct {
-	Id   int
-	Name string
+	Id          int
+	Category_Id int
+	Name        string
 }
 
 // Unsure about this

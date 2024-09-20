@@ -92,8 +92,7 @@ func (r *Repository) CreateUser(ctx context.Context, user *model.User) error {
 }
 
 // TODO: Test me
-// Dont think I need to assing categoryID as that is the PK which should get auto incremented
-func (r *Repository) CreateCategory(ctx context.Context, category *model.Catergory, userID string) error {
+func (r *Repository) CreateCategory(ctx context.Context, category *model.Catergory, userId string) error {
 	db, err := MsSqlConnection()
 	if err != nil {
 		return fmt.Errorf("error establishing DB connection: %v", err)
@@ -102,18 +101,41 @@ func (r *Repository) CreateCategory(ctx context.Context, category *model.Catergo
 		err = errors.New("CreateUser: db is null")
 		return err
 	}
-	tsql := `INSERT INTO [dbo].[Category] (id, name) VALUES (@Id, @Name);`
+	category.Category_Id = int(uuid.New().ID())
+	tsql := `INSERT INTO [dbo].[Category] (category_id, id, name) VALUES (@CategoryId, @Id, @Name);`
 	stmt, err := db.PrepareContext(ctx, tsql)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
-	category.Id = int(uuid.New().ID())
 
 	_, err = stmt.ExecContext(ctx,
 		sql.Named("name", category.Name),
-		sql.Named("id", userID),
+		sql.Named("id", userId),
+		sql.Named("category_id", category.Category_Id),
 	)
+	return nil
+}
+
+// returns the `category_id` of the newly created Category
+func (r *Repository) CreateCategoryByName(ctx context.Context, categoryName, userId string) error {
+	db, err := MsSqlConnection()
+	if err != nil {
+		return fmt.Errorf("error establishing DB connection: %v", err)
+	}
+	if db == nil {
+		err = errors.New("CreateUser: db is null")
+		return err
+	}
+	categoryId := int(uuid.New().ID())
+	tsql := `INSERT INTO [dbo].[Category] (category_id, id, name) VALUES (@CategoryId, @Id, @Name);`
+	stmt, err := db.PrepareContext(ctx, tsql)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, sql.Named("name", categoryName), sql.Named("userId", userId), sql.Named("category_id", categoryId))
 	return nil
 }
 
@@ -149,6 +171,47 @@ func (r *Repository) UpdateCategoryName(ctx context.Context, category *model.Cat
 	return nil
 }
 
+// Returns the ID of found category
+// if no category of `categoryName` in DB, a category gets created
+// Refactor in future: Have it so that select statement returns the Id?
+func (r *Repository) SearchCategoryByName(ctx context.Context, categoryName, userId string) (string, error) {
+	var err error
+	var categoryId string
+
+	db, err := MsSqlConnection()
+	if err != nil {
+		return "", fmt.Errorf("error establishing DB connection: %v", err)
+	}
+	if db == nil {
+		err = errors.New("SearchCategoryByName: db is null")
+		return "", err
+	}
+
+	tsql := `SELECT [category_id] FROM [dbo].[Category] WHERE categoryName = @name AND userId = @id;`
+	stmt, err := db.PrepareContext(ctx, tsql)
+	if err != nil {
+		return "", nil
+	}
+	defer stmt.Close()
+	err = stmt.QueryRowContext(ctx, sql.Named("name", categoryName), sql.Named("id", userId)).Scan(&categoryId)
+
+	// category_id == null
+	if err == sql.ErrNoRows {
+		err = r.CreateCategoryByName(ctx, categoryName, userId)
+		if err != nil {
+			return "", fmt.Errorf("error fetching category_id by name: %v", err)
+		}
+		// rerun select stmt
+		err = stmt.QueryRowContext(ctx, sql.Named("name", categoryName), sql.Named("id", userId)).Scan(&categoryId)
+		if err != nil {
+			return "", fmt.Errorf("error fetching new category_id by name: %v", err)
+		}
+	} else if err != nil {
+		return "", err
+	}
+	return categoryId, nil
+}
+
 // `Expense` belongs to a category which
 // to create an `Expense` it must belong to some category
 func (r *Repository) CreateExpense(ctx context.Context, expense *model.Expense, categoryName, userId string) error {
@@ -157,36 +220,51 @@ func (r *Repository) CreateExpense(ctx context.Context, expense *model.Expense, 
 		return fmt.Errorf("error establishing DB connection: %v", err)
 	}
 	if db == nil {
-		err = errors.New("CreateUser: db is null")
+		err = errors.New("CreateExpense: db is null")
 		return err
 	}
-
-	// using categoryName, and userId query DB for a category with the respective name and userID
-	// searchCategory(categoryName, usrId) model.Category ?
-	// then add the following expense to that category
-
-	//tsql := `INSERT INTO [dbo].[Expense] (id)`
-	return nil
-}
-
-// TODO: Unsure if I need to pass a category?
-// as expenses are within categories
-func (r *Repository) DeleteExpense(ctx context.Context, expenseName string) error {
-	db, err := MsSqlConnection()
+	categoryId, err := r.SearchCategoryByName(ctx, categoryName, userId)
 	if err != nil {
-		return fmt.Errorf("error establishing DB connection: %v", err)
+		return fmt.Errorf("error searching category by name: %v", err)
 	}
-	if db == nil {
-		err = errors.New("CreateUser: db is null")
-		return err
-	}
-	tsql := `DELETE FROM [dbo].[Expense] WHERE [expense_name] = @expenseName;`
+	expenseId := int(uuid.New().ID())
+	tsql := `INSERT INTO [dbo].[Expense] (expense_id, id, category_id, amount, expense_name) VALUES (@ExpenseId, @Id, @Category_id, @Amount, @Expense_name);`
 	stmt, err := db.PrepareContext(ctx, tsql)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
-	res, err := stmt.ExecContext(ctx, sql.Named("expense_name", expenseName))
+	_, err = stmt.ExecContext(ctx,
+		sql.Named("expense_id", expenseId),
+		sql.Named("id", userId),
+		sql.Named("category_id", categoryId), // TODO: Change this to be CategoryID
+		sql.Named("amount", expense.Amount),
+		sql.Named("expense_name", expense.ExpenseName),
+	)
+	if err != nil {
+		return fmt.Errorf("error inserting into Expense Table: %v", err)
+	}
+	return nil
+}
+
+// TODO: Unsure if I need to pass a category?
+// as expenses are within categories
+func (r *Repository) DeleteExpense(ctx context.Context, expenseName, userId string) error {
+	db, err := MsSqlConnection()
+	if err != nil {
+		return fmt.Errorf("error establishing DB connection: %v", err)
+	}
+	if db == nil {
+		err = errors.New("DeleteExpense: db is null")
+		return err
+	}
+	tsql := `DELETE FROM [dbo].[Expense] WHERE expense_name = @expenseName AND id = @userId;`
+	stmt, err := db.PrepareContext(ctx, tsql)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	res, err := stmt.ExecContext(ctx, sql.Named("expense_name", expenseName), sql.Named("id", userId))
 	if err != nil {
 		return err
 	}
@@ -253,6 +331,45 @@ func loadDbEnv() map[string]string {
 
 	return envMap
 }
+
+/*
+// Returns the name of the category if it exists, otherwise create new category returning the name
+func (r *Repository) DeprecatedSearchCategoryByName(ctx context.Context, categoryName, userId string) (string, error) {
+	var err error
+	db, err := MsSqlConnection()
+	if err != nil {
+		return "", fmt.Errorf("error establishing DB connection: %v", err)
+	}
+	if db == nil {
+		err = errors.New("SearchCategoryByName: db is null")
+		return "", err
+	}
+	tsql := `SELECT [name] FROM [dbo].[Category] WHERE categoryName = @name AND userId = @id;`
+	stmt, err := db.PrepareContext(ctx, tsql)
+	if err != nil {
+		return "", nil
+	}
+	defer stmt.Close()
+	var cName string
+	err = stmt.QueryRowContext(ctx, sql.Named("name", categoryName), sql.Named("id", userId)).Scan(&cName)
+
+	if err == sql.ErrNoRows {
+		err = r.CreateCategoryByName(ctx, categoryName, userId)
+		if err != nil {
+			return "", fmt.Errorf("error creating category by name: %v", err)
+		}
+		// re-run select statement fetching newly created category
+		err = stmt.QueryRowContext(ctx, sql.Named("name", categoryName), sql.Named("id", userId)).Scan(&cName)
+		if err != nil {
+			return "", fmt.Errorf("error fetching new category by name: %v", err)
+		}
+	} else if err != nil {
+		return "", err
+	}
+
+	return cName, nil
+}
+*/
 
 /*
 // Deprecated
