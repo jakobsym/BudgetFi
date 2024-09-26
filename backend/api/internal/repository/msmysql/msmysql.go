@@ -117,7 +117,6 @@ func (r *Repository) CreateCategory(ctx context.Context, category *model.Catergo
 	return nil
 }
 
-// returns the `category_id` of the newly created Category
 func (r *Repository) CreateCategoryByName(ctx context.Context, categoryName, userId string) error {
 	db, err := MsSqlConnection()
 	if err != nil {
@@ -136,38 +135,6 @@ func (r *Repository) CreateCategoryByName(ctx context.Context, categoryName, use
 	defer stmt.Close()
 
 	_, err = stmt.ExecContext(ctx, sql.Named("name", categoryName), sql.Named("userId", userId), sql.Named("category_id", categoryId))
-	return nil
-}
-
-// TODO: Test me
-func (r *Repository) DeleteCategoryByName(ctx context.Context, categoryName string) error {
-	db, err := MsSqlConnection()
-	if err != nil {
-		return fmt.Errorf("error establishing DB connection: %v", err)
-	}
-	if db == nil {
-		err = errors.New("CreateUser: db is null")
-		return err
-	}
-	tsql := `DELETE FROM [dbo].[Category] WHERE [name] = @Name;`
-	stmt, err := db.PrepareContext(ctx, tsql)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-	res, err := stmt.ExecContext(ctx, sql.Named("name", categoryName))
-	if err != nil {
-		return err
-	}
-	row, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	log.Printf("Deleted %d row\n", row)
-	return nil
-}
-
-func (r *Repository) UpdateCategoryName(ctx context.Context, category *model.Catergory, newCategoryName string) error {
 	return nil
 }
 
@@ -212,6 +179,38 @@ func (r *Repository) SearchCategoryByName(ctx context.Context, categoryName, use
 	return categoryId, nil
 }
 
+// TODO: Test me
+func (r *Repository) DeleteCategoryByName(ctx context.Context, categoryName, userId string) error {
+	db, err := MsSqlConnection()
+	if err != nil {
+		return fmt.Errorf("error establishing DB connection: %v", err)
+	}
+	if db == nil {
+		err = errors.New("CreateUser: db is null")
+		return err
+	}
+	tsql := `DELETE FROM [dbo].[Category] WHERE [name] = @Name AND userId = @id;`
+	stmt, err := db.PrepareContext(ctx, tsql)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	res, err := stmt.ExecContext(ctx, sql.Named("name", categoryName), sql.Named("id", userId))
+	if err != nil {
+		return err
+	}
+	row, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	log.Printf("Deleted %d row\n", row)
+	return nil
+}
+
+func (r *Repository) UpdateCategoryName(ctx context.Context, category *model.Catergory, newCategoryName string) error {
+	return nil
+}
+
 // `Expense` belongs to a category which
 // to create an `Expense` it must belong to some category
 func (r *Repository) CreateExpense(ctx context.Context, expense *model.Expense, categoryName, userId string) error {
@@ -237,7 +236,7 @@ func (r *Repository) CreateExpense(ctx context.Context, expense *model.Expense, 
 	_, err = stmt.ExecContext(ctx,
 		sql.Named("expense_id", expenseId),
 		sql.Named("id", userId),
-		sql.Named("category_id", categoryId), // TODO: Change this to be CategoryID
+		sql.Named("category_id", categoryId),
 		sql.Named("amount", expense.Amount),
 		sql.Named("expense_name", expense.ExpenseName),
 	)
@@ -247,8 +246,8 @@ func (r *Repository) CreateExpense(ctx context.Context, expense *model.Expense, 
 	return nil
 }
 
-// TODO: Unsure if I need to pass a category?
-// as expenses are within categories
+// TODO: Consider the fact that Expenses only exist within a given Category
+// This does not work as intended
 func (r *Repository) DeleteExpense(ctx context.Context, expenseName, userId string) error {
 	db, err := MsSqlConnection()
 	if err != nil {

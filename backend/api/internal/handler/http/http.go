@@ -116,6 +116,7 @@ func (h *Handler) OauthCallback(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("User logged-in"))
+	// redirect to another route
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
