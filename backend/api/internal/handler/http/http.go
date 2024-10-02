@@ -137,15 +137,43 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("User session deleted."))
 }
 
+func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
+	var category model.Catergory
+	// fetch UUID from session
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, "unable to get session"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	userID := session.Values["user_id"].(string)
+
+	if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
+		http.Error(w, "error decoding category"+err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	err = h.ctrl.CreateCategory(r.Context(), &category, userID)
+	if err != nil {
+		http.Error(w, "unable to get session"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Category Created for user: "))
+	http.Redirect(w, r, "/dashbard", http.StatusSeeOther)
+}
+
+func (h *Handler) CreateExpense(w http.ResponseWriter, r *http.Request) {}
+
 // TODO: make session creation a function?
 
-// Util
+/* Util functions */
+
 // generates [16]byte uuid
 func GenerateUUID() (uuid.UUID, error) {
 	return uuid.Must(uuid.NewRandom()), nil
 }
 
-// Util
 // generates oauth state cookie
 func genStateOauthCookie() string {
 	b := make([]byte, 16)
@@ -154,7 +182,6 @@ func genStateOauthCookie() string {
 	return state
 }
 
-// Util
 func loadOauthEnv() map[string]string {
 	err := godotenv.Load("backend.env")
 	if err != nil {

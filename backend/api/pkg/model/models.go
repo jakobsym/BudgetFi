@@ -33,7 +33,7 @@ type Saving struct {
 }
 
 type Catergory struct {
-	Id          int
+	Id          [16]byte
 	Category_Id int
 	Name        string
 }

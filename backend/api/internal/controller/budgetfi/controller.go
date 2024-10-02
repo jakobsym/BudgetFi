@@ -13,6 +13,7 @@ type budgetfiRepo interface {
 	//Post(ctx context.Context, user *model.User) error
 	CreateUser(ctx context.Context, user *model.User) error
 	PrevUserCheck(ctx context.Context, user *model.User) (string, error)
+	CreateCategory(ctx context.Context, category *model.Catergory, userId string) error
 	//TODO: Get
 	//TODO: Put
 	//TODO: Delete
@@ -26,13 +27,10 @@ func New(repo budgetfiRepo) *Controller {
 	return &Controller{repo: repo}
 }
 
-/*
-// Deprecated
+func (c *Controller) CreateCategory(ctx context.Context, category *model.Catergory, userId string) error {
+	return c.repo.CreateCategory(ctx, category, userId)
+}
 
-	func (c *Controller) Post(ctx context.Context, user *model.User) error {
-		return c.repo.Post(ctx, user)
-	}
-*/
 func (c *Controller) PrevUserCheck(ctx context.Context, user *model.User) (string, error) {
 	return c.repo.PrevUserCheck(ctx, user)
 }

@@ -102,6 +102,12 @@ func (r *Repository) CreateCategory(ctx context.Context, category *model.Catergo
 		return err
 	}
 	category.Category_Id = int(uuid.New().ID())
+	// convert userID to byte slice
+	updatedUserID, err := uuid.Parse(userId)
+	if err != nil {
+		return fmt.Errorf("error parsing userID string: %v", err)
+	}
+
 	tsql := `INSERT INTO [dbo].[Category] (category_id, id, name) VALUES (@CategoryId, @Id, @Name);`
 	stmt, err := db.PrepareContext(ctx, tsql)
 	if err != nil {
@@ -111,7 +117,7 @@ func (r *Repository) CreateCategory(ctx context.Context, category *model.Catergo
 
 	_, err = stmt.ExecContext(ctx,
 		sql.Named("name", category.Name),
-		sql.Named("id", userId),
+		sql.Named("id", updatedUserID[:]),
 		sql.Named("category_id", category.Category_Id),
 	)
 	return nil
