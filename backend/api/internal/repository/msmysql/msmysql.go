@@ -217,6 +217,38 @@ func (r *Repository) UpdateCategoryName(ctx context.Context, category *model.Cat
 	return nil
 }
 
+func (r *Repository) ListCategoriesByUser(ctx context.Context, userId string) ([]string, error) {
+	var userCategories []string
+	var categoryName string
+
+	db, err := MsSqlConnection()
+	if err != nil {
+		return nil, fmt.Errorf("error establishing DB connection: %v", err)
+	}
+	if db == nil {
+		err = errors.New("CreateUser: db is null")
+		return nil, err
+	}
+	tsql := `SELECT * FROM [dbo].[Category] WHERE [id] = @userId;`
+	stmt, err := db.PrepareContext(ctx, tsql)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+	rows, err := stmt.QueryContext(ctx, sql.Named("id", userId))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&categoryName)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return userCategories, nil
+}
+
 // `Expense` belongs to a category which
 // to create an `Expense` it must belong to some category
 func (r *Repository) CreateExpense(ctx context.Context, expense *model.Expense, categoryName, userId string) error {

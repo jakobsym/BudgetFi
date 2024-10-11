@@ -14,6 +14,7 @@ type budgetfiRepo interface {
 	CreateUser(ctx context.Context, user *model.User) error
 	PrevUserCheck(ctx context.Context, user *model.User) (string, error)
 	CreateCategory(ctx context.Context, category *model.Catergory, userId string) error
+	DeleteCategoryByName(ctx context.Context, categroryName, userId string) error
 	//TODO: Get
 	//TODO: Put
 	//TODO: Delete
@@ -25,6 +26,10 @@ type Controller struct {
 
 func New(repo budgetfiRepo) *Controller {
 	return &Controller{repo: repo}
+}
+
+func (c *Controller) DeleteCategory(ctx context.Context, categoryName, userId string) error {
+	return c.repo.DeleteCategoryByName(ctx, categoryName, userId)
 }
 
 func (c *Controller) CreateCategory(ctx context.Context, category *model.Catergory, userId string) error {

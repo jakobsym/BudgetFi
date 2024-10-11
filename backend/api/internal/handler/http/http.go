@@ -146,7 +146,6 @@ func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	userID := session.Values["user_id"].(string)
-
 	if err := json.NewDecoder(r.Body).Decode(&category); err != nil {
 		http.Error(w, "error decoding category"+err.Error(), http.StatusBadRequest)
 		return
@@ -163,7 +162,41 @@ func (h *Handler) CreateCategory(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/dashbard", http.StatusSeeOther)
 }
 
-func (h *Handler) CreateExpense(w http.ResponseWriter, r *http.Request) {}
+// When category is deleted, client will send the name of the category
+func (h *Handler) DeleteCategory(w http.ResponseWriter, r *http.Request) {
+	var categoryName string
+	// fetch UUID from session
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, "unable to get session"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	userID := session.Values["user_id"].(string)
+	if err := json.NewDecoder(r.Body).Decode(&categoryName); err != nil {
+		http.Error(w, "error decoding body %v", http.StatusBadRequest)
+		return
+	}
+	err = h.ctrl.DeleteCategory(r.Context(), categoryName, userID)
+	if err != nil {
+		http.Error(w, "error deleting category: %v", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Category Deleted"))
+	// redirect?
+}
+
+func (h *Handler) CreateExpense(w http.ResponseWriter, r *http.Request) {
+	// fetch UUID from session
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, "unable to get session"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	userID := session.Values["user_id"].(string)
+}
+
+func (h *Handler) DeleteExpense(w http.ResponseWriter, r *http.Request) {}
 
 // TODO: make session creation a function?
 
